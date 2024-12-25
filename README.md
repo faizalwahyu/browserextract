@@ -1,0 +1,2 @@
+# browserextract
+For Educational Only
