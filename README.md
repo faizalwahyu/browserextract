@@ -1,6 +1,7 @@
 Browser-extract-password
 
 This python program gets all the saved passwords, credit cards and bookmarks from chromium based browsers supports chromium and firefox
+
 Modules Required
 
 To install all the required modules use the following code:
