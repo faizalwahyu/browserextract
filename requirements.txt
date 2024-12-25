@@ -1,3 +1,4 @@
 pypiwin32
 pycryptodome
 cryptography
+requests
