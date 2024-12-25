@@ -90,13 +90,17 @@ def get_master_key(path: str):
     key = CryptUnprotectData(key, None, None, None, 0)[1]
     return key
 
-
 def decrypt_password(buff: bytes, key: bytes) -> str:
     iv = buff[3:15]
     payload = buff[15:]
     cipher = AES.new(key, AES.MODE_GCM, iv)
     decrypted_pass = cipher.decrypt(payload)
-    decrypted_pass = decrypted_pass[:-16].decode()
+    decrypted_pass = decrypted_pass[:-16]  # Hapus tag autentikasi di bagian akhir
+    try:
+        # Menambahkan error='ignore' untuk mengabaikan karakter yang tidak dapat didekode
+        decrypted_pass = decrypted_pass.decode(errors='ignore')
+    except UnicodeDecodeError:
+        decrypted_pass = "<UNDECODABLE>"
     return decrypted_pass
 
 
